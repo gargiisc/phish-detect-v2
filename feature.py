@@ -27,6 +27,9 @@ class FeatureExtraction:
         self.soup = ""
 
         try:
+            pass  # Add your code logic here
+        except Exception as e:
+            print(f"An error occurred: {e}")
             self.response = requests.get(url)
             self.soup = BeautifulSoup(response.text, 'html.parser')
         except:
@@ -204,35 +207,36 @@ class FeatureExtraction:
     # 13. RequestURL
     def RequestURL(self):
         try:
+            success, i = 0, 0  # Initialize variables
             for img in self.soup.find_all('img', src=True):
                 dots = [x.start(0) for x in re.finditer('\.', img['src'])]
                 if self.url in img['src'] or self.domain in img['src'] or len(dots) == 1:
-                    success = success + 1
-                i = i + 1
+                    success += 1
+                i += 1
 
             for audio in self.soup.find_all('audio', src=True):
                 dots = [x.start(0) for x in re.finditer('\.', audio['src'])]
                 if self.url in audio['src'] or self.domain in audio['src'] or len(dots) == 1:
-                    success = success + 1
-                i = i + 1
+                    success += 1
+                i += 1
 
             for embed in self.soup.find_all('embed', src=True):
                 dots = [x.start(0) for x in re.finditer('\.', embed['src'])]
                 if self.url in embed['src'] or self.domain in embed['src'] or len(dots) == 1:
-                    success = success + 1
-                i = i + 1
+                    success += 1
+                i += 1
 
             for iframe in self.soup.find_all('iframe', src=True):
                 dots = [x.start(0) for x in re.finditer('\.', iframe['src'])]
                 if self.url in iframe['src'] or self.domain in iframe['src'] or len(dots) == 1:
-                    success = success + 1
-                i = i + 1
+                    success += 1
+                i += 1
 
             try:
                 percentage = success / float(i) * 100
                 if percentage < 22.0:
                     return 1
-                elif ((percentage >= 22.0) and (percentage < 61.0)):
+                elif 22.0 <= percentage < 61.0:
                     return 0
                 else:
                     return -1
@@ -247,21 +251,20 @@ class FeatureExtraction:
             i, unsafe = 0, 0
             for a in self.soup.find_all('a', href=True):
                 if "#" in a['href'] or "javascript" in a['href'].lower() or "mailto" in a['href'].lower() or not (
-                        url in a['href'] or self.domain in a['href']):
-                    unsafe = unsafe + 1
-                i = i + 1
+                        self.url in a['href'] or self.domain in a['href']):  # Use self.url
+                    unsafe += 1
+                i += 1
 
             try:
                 percentage = unsafe / float(i) * 100
                 if percentage < 31.0:
                     return 1
-                elif ((percentage >= 31.0) and (percentage < 67.0)):
+                elif 31.0 <= percentage < 67.0:
                     return 0
                 else:
                     return -1
             except:
                 return -1
-
         except:
             return -1
 
@@ -314,7 +317,7 @@ class FeatureExtraction:
     # 17. InfoEmail
     def InfoEmail(self):
         try:
-            if re.findall(r"[mail\(\)|mailto:?]", self.soap):
+            if re.findall(r"[mail\(\)|mailto:?]", self.soup):  # Fix typo: self.soap -> self.soup
                 return -1
             else:
                 return 1
@@ -471,7 +474,7 @@ class FeatureExtraction:
         try:
             url_match = re.search(
                 'at\.ua|usa\.cc|baltazarpresentes\.com\.br|pe\.hu|esy\.es|hol\.es|sweddy\.com|myjino\.ru|96\.lt|ow\.ly',
-                url)
+                self.url)  # Use self.url
             ip_address = socket.gethostbyname(self.domain)
             ip_match = re.search(
                 '146\.112\.61\.108|213\.174\.157\.151|121\.50\.168\.88|192\.185\.217\.116|78\.46\.211\.158|181\.174\.165\.13|46\.242\.145\.103|121\.50\.168\.40|83\.125\.22\.219|46\.242\.145\.98|'

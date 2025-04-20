@@ -22,6 +22,10 @@
           <button type="submit" class="bg-teal-500 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-full transition duration-300">Scan URL</button>
         </div>
         <p class="mt-4">
+          {% if phishing_url %}
+          <h2 class="text-red-500 text-2xl">⚠️ Phishing URL Detected:</h2>
+          <p class="text-xl">{{ phishing_url }}</p>
+          {% endif %}
           {% if name %}
           <b><p class="text-xl">{{name[0]}}</p></b>
           <h2 class="text-teal-400 text-2xl">Website is {{name[1]}} to use</h2><br>

@@ -15,25 +15,37 @@ file.close()
 app = Flask(__name__)
 @app.route("/")
 def home():
-    return render_template("index.html")
-@app.route('/result',methods=['POST','GET'])
+    phishing_url = request.args.get("phishing_url") 
+    return render_template("index.html", phishing_url=phishing_url)
+
+@app.route('/result', methods=['POST', 'GET'])
 def predict():
     if request.method == "POST":
         url = request.form["name"]
+        print("URL:", url)  
         obj = FeatureExtraction(url)
         x = np.array(obj.getFeaturesList()).reshape(1, 30)
-    
+        print("Extracted Features:", x) 
         y_pred = gbc.predict(x)[0]
-        # 1 is safe
-        # -1 is unsafe
-        y_pro_phishing = gbc.predict_proba(x)[0, 0]
-        y_pro_non_phishing = gbc.predict_proba(x)[0, 1]
+        y_proba = gbc.predict_proba(x)
+        print("Prediction:", y_pred) 
+        print("Probabilities (Safe, Malicious):", y_proba) 
+
+        y_pro_phishing = y_proba[0, 0]
+        y_pro_non_phishing = y_proba[0, 1]
+
+        threshold = 0.5  
+        if y_pro_non_phishing > threshold:
+            y_pred = 1  # Safe
+        else:
+            y_pred = -1  # Malicious
+
         if y_pred == 1:
             pred = "It is {0:.2f} % safe to go ".format(y_pro_phishing * 100)
-            xx = y_pro_non_phishing  
+            xx = y_pro_non_phishing
             name = convertion(url, int(y_pred))
         else:
-            xx = y_pro_phishing  
+            xx = y_pro_phishing
             name = convertion(url, int(y_pred))
         return render_template("index.html", name=name, xx=xx)
     

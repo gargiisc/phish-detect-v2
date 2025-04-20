@@ -1,40 +1,45 @@
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status === "complete" && tab.url) {
-        fetch("http://127.0.0.1:5000/check_url", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ url: tab.url }),
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                console.log("API Response:", data);
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "check_url") {
+    const url = message.url;
+    console.log("Received URL to check:", url); 
 
-                let title = "✅ Safe Website";
-                let message = "This site is safe to browse.";
+    // Send the URL to the backend for analysis
+    fetch("http://127.0.0.1:5000/check_url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: url }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Backend response:", data); 
+        sendResponse({ phishing: data.phishing });
 
-                if (data.phishing) {
-                    title = "⚠️ Phishing Alert!";
-                    message = "Warning! This site may be a phishing attempt.";
-                    
-                }
-                chrome.notifications.create({
-                    type: "basic",
-                    iconUrl: icon,
-                    title: title,
-                    message: message,
-                    priority: 2
-                });
-                chrome.windows.create({
-                    url: "popup.html",
-                    type: "popup",
-                    width: 300,
-                    height: 150,
-                    left: screen.width - 320,
-                    top: 50
-                });
-            })
-            .catch((error) => console.error("Error:", error));
-    }
+        // If phishing is detected, open the website page with the URL as a query parameter
+        if (data.phishing) {
+          const phishingPageUrl = `http://127.0.0.1:5000/?phishing_url=${encodeURIComponent(url)}`;
+          chrome.tabs.create({ url: phishingPageUrl });
+        }
+        
+        // Forward the result to the popup
+        chrome.runtime.sendMessage({
+          action: "update_popup",
+          url: url,
+          phishing: data.phishing,
+        });
+      })
+      .catch((error) => {
+        console.error("Error checking URL:", error);
+        sendResponse({ phishing: false }); 
+
+        chrome.runtime.sendMessage({
+          action: "update_popup",
+          url: url,
+          phishing: false,
+        });
+      });
+      
+
+    // Return true to indicate that the response will be sent asynchronously
+    return true;
+  }
 });
